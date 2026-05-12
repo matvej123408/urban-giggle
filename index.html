@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#e0001b" />
+    <title>POLREGIO Live Onboard Screen</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="jszip.min.js"></script>
+    <script defer src="app.js?v=2"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="control-panel" aria-label="Train screen controls">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <div>
+            <p class="eyebrow">SBB style onboard display</p>
+            <h1>POLREGIO Live</h1>
+          </div>
+        </div>
+
+        <section class="control-section">
+          <h2>GTFS Schedule</h2>
+          <p id="gtfsStatus" class="status-text">Loading gtfs.zip from this folder...</p>
+          <div class="split-actions">
+            <button id="refreshBtn" type="button">
+              <span aria-hidden="true">↻</span>
+              Reload gtfs.zip
+            </button>
+            <button id="chooseGtfsBtn" type="button">
+              <span aria-hidden="true">📁</span>
+              Choose gtfs.zip
+            </button>
+          </div>
+          <input id="gtfsFileInput" type="file" accept=".zip" style="display:none" />
+        </section>
+
+        <section class="control-section">
+          <h2>Schedule Simulation</h2>
+          <div class="field-row">
+            <label class="field-label" for="scheduleDate">Select date</label>
+            <input id="scheduleDate" type="date" />
+          </div>
+          <div class="field-row">
+            <label class="field-label" for="scheduleTime">Select time</label>
+            <input id="scheduleTime" type="time" value="08:00" />
+          </div>
+          <div class="split-actions">
+            <button id="startScheduleBtn" type="button" disabled>
+              <span aria-hidden="true">▶</span>
+              Start schedule
+            </button>
+            <button id="resetScheduleBtn" type="button" disabled>
+              <span aria-hidden="true">⏹</span>
+              Reset schedule
+            </button>
+          </div>
+          <p id="scheduleHint" class="hint-text">Pick a date to enable schedule simulation.</p>
+        </section>
+
+        <section class="control-section">
+          <h2>Driving Now</h2>
+          <label class="field-label" for="destinationSearch">Search by destination</label>
+          <div class="search-row">
+            <input id="destinationSearch" class="text-input" type="search" placeholder="Destination station" autocomplete="off" />
+            <button id="destinationSearchBtn" type="button">
+              <span aria-hidden="true">⌕</span>
+              Search
+            </button>
+          </div>
+          <label class="field-label" for="tripSelect">All selectable trains</label>
+          <select id="tripSelect"></select>
+          <p id="tripHint" class="hint-text">Every train shows in Driving Now.</p>
+        </section>
+
+        <section class="control-section">
+          <h2>Announcements</h2>
+          <div class="field-row">
+            <label class="field-label" for="languageSelect">Voice</label>
+            <select id="languageSelect">
+              <option value="en">English</option>
+              <option value="pl">Polski</option>
+              <option value="pl-en">Polski + English</option>
+              <option value="en-pl">English + Polski</option>
+              <option value="all">Every language</option>
+              <option value="de">Deutsch</option>
+              <option value="cs">Cesky</option>
+              <option value="sk">Slovensky</option>
+              <option value="uk">Ukrainska</option>
+              <option value="fr">Francais</option>
+              <option value="es">Espanol</option>
+              <option value="it">Italiano</option>
+              <option value="nl">Nederlands</option>
+              <option value="pt">Portugues</option>
+              <option value="sv">Svenska</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label class="field-label" for="stationFilterInput">Alert stations</label>
+            <input id="stationFilterInput" class="text-input" type="text" placeholder="Belzec, Lublin Glowny" />
+          </div>
+          <p class="hint-text">Type comma-separated station names; approaching announcements will fire when the train reaches them.</p>
+          <label class="toggle-row">
+            <input id="autoAnnounce" type="checkbox" checked />
+            <span>Auto announcements</span>
+          </label>
+          <div class="field-row announcement-slider-row">
+            <label class="field-label" for="announcementVolume">Announcement volume</label>
+            <input id="announcementVolume" type="range" min="0" max="2" step="0.01" value="1.0" />
+            <span id="announcementVolumeValue">100%</span>
+          </div>
+          <div class="announcement-actions" aria-label="Announcement buttons">
+            <button id="enableSoundBtn" type="button">
+              <span aria-hidden="true">♪</span>
+              Enable
+            </button>
+            <button id="welcomeBtn" type="button">
+              <span aria-hidden="true">▶</span>
+              Welcome
+            </button>
+            <button id="arrivingBtn" type="button">
+              <span aria-hidden="true">▶</span>
+              Arriving
+            </button>
+            <button id="approachingBtn" type="button">
+              <span aria-hidden="true">▶</span>
+              Approaching
+            </button>
+            <button id="arrivedBtn" type="button">
+              <span aria-hidden="true">▶</span>
+              Arrived
+            </button>
+          </div>
+          <p id="audioStatus" class="status-text">PKP Intercity-style gong asset ready.</p>
+        </section>
+
+        <section class="control-section">
+          <h2>Train Sound Settings</h2>
+          <div class="field-row">
+            <label class="field-label" for="trainTypeSelect">Train type</label>
+            <select id="trainTypeSelect"></select>
+          </div>
+          <div class="field-row">
+            <label class="field-label" for="soundVariantSelect">Sound set</label>
+            <select id="soundVariantSelect"></select>
+          </div>
+          <div class="field-row sound-slider-row">
+            <label class="field-label" for="engineVolume">Engine volume</label>
+            <input id="engineVolume" type="range" min="0" max="1" step="0.01" value="0.8" />
+            <span id="engineVolumeValue">80%</span>
+          </div>
+          <div class="field-row sound-slider-row">
+            <label class="field-label" for="accelerationVolume">Acceleration volume</label>
+            <input id="accelerationVolume" type="range" min="0" max="1" step="0.01" value="0.8" />
+            <span id="accelerationVolumeValue">80%</span>
+          </div>
+          <div class="field-row sound-slider-row">
+            <label class="field-label" for="decelerationVolume">Deceleration volume</label>
+            <input id="decelerationVolume" type="range" min="0" max="1" step="0.01" value="0.8" />
+            <span id="decelerationVolumeValue">80%</span>
+          </div>
+          <div class="field-row sound-slider-row">
+            <label class="field-label" for="rideVolume">Ride sound volume</label>
+            <input id="rideVolume" type="range" min="0" max="1" step="0.01" value="0.8" />
+            <span id="rideVolumeValue">80%</span>
+          </div>
+          <div class="field-row sound-slider-row">
+            <label class="field-label" for="wheelVolume">Wheel sound volume</label>
+            <input id="wheelVolume" type="range" min="0" max="1" step="0.01" value="0.8" />
+            <span id="wheelVolumeValue">80%</span>
+          </div>
+          <div class="field-row sound-slider-row">
+            <label class="field-label" for="stuckVolume">Stuck wheel volume</label>
+            <input id="stuckVolume" type="range" min="0" max="1" step="0.01" value="0.8" />
+            <span id="stuckVolumeValue">80%</span>
+          </div>
+          <div class="announcement-actions sound-preview-actions" aria-label="Sound preview buttons">
+            <button id="previewEngineBtn" type="button">Engine</button>
+            <button id="previewAccelBtn" type="button">Accelerate</button>
+            <button id="previewDecelBtn" type="button">Decelerate</button>
+            <button id="previewRideBtn" type="button">Ride</button>
+            <button id="previewWheelBtn" type="button">Wheel</button>
+            <button id="previewStuckBtn" type="button">Stuck wheel</button>
+          </div>
+          <div class="field-row sound-slider-row">
+            <label class="field-label" for="speedKph">Speed</label>
+            <input id="speedKph" type="range" min="0" max="160" step="1" value="0" />
+            <span id="speedKphValue">0 km/h</span>
+          </div>
+          <div class="split-actions">
+            <button id="loadSoundsBtn" type="button">Load sounds</button>
+            <button id="downloadSoundsBtn" type="button">Download sound pack</button>
+            <button id="downloadAllSoundsBtn" type="button">Download all packs</button>
+          </div>
+          <p id="soundStatus" class="status-text">Choose a train type and load its sound set.</p>
+        </section>
+
+        <section class="control-section compact">
+          <h2>PWA</h2>
+          <button id="installBtn" type="button" disabled>
+            <span aria-hidden="true">⬇</span>
+            Install App
+          </button>
+          <p id="pwaStatus" class="hint-text">Works on GitHub Pages, localhost, and HTTPS static hosting.</p>
+        </section>
+      </aside>
+
+      <main class="screen-stage" aria-label="Live train screen preview">
+        <section class="train-display" aria-live="polite">
+          <div class="display-topbar">
+            <div class="operator-strip">
+              <span class="sbb-pill">SBB</span>
+              <span class="polregio-wordmark">POLREGIO</span>
+            </div>
+            <div class="service-meta">
+              <span id="serviceCode">R 00000</span>
+              <span id="clock">--:--</span>
+            </div>
+          </div>
+
+          <div class="route-head">
+            <div>
+              <p class="label">Destination</p>
+              <h2 id="destinationName">Opole Główne</h2>
+            </div>
+            <div class="train-type-readout">
+              <p class="label">Train sound</p>
+              <h3 id="trainTypeLabel">No train type · No sound pack</h3>
+            </div>
+            <div class="speed-chip">
+              <p class="label">Speed</p>
+              <h3 id="speedDisplay">0 km/h</h3>
+            </div>
+            <div class="live-chip" id="liveChip">
+              <span></span>
+              Live GTFS
+            </div>
+            <div class="station-badge" id="stationBadge" style="display: none;">
+              <span>At Station</span>
+            </div>
+          </div>
+
+          <div class="primary-readout">
+            <div class="next-block">
+              <p id="phaseLabel" class="label">Next station</p>
+              <h3 id="nextStation">Oława</h3>
+            </div>
+          </div>
+
+          <div class="motion-band" aria-hidden="true">
+            <div class="track-lines">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="train-silhouette"></div>
+          </div>
+
+          <div class="route-map" aria-label="Route progress">
+            <div class="progress-line">
+              <span id="progressFill" class="progress-fill"></span>
+              <span id="progressThumb" class="progress-thumb" aria-hidden="true"></span>
+            </div>
+            <div class="stop-list-window">
+              <ol id="stopList"></ol>
+            </div>
+          </div>
+
+          <div class="lower-grid">
+            <div class="info-tile">
+              <p class="label">Current section</p>
+              <strong id="sectionText">Wrocław Brochów → Oława</strong>
+            </div>
+            <div class="info-tile">
+              <p class="label">Status</p>
+              <strong id="statusText">En route</strong>
+            </div>
+            <div class="info-tile">
+              <p class="label">Journey</p>
+              <strong id="journeyProgress">--%</strong>
+            </div>
+          </div>
+
+          <div class="ticker">
+            <span id="tickerText">Welcome onboard this POLREGIO service.</span>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
